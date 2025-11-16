@@ -6,3 +6,5 @@ tls.key
 tls.crt
 tls.key
 minikube-linux-amd64
+tls.key
+tls.crt
