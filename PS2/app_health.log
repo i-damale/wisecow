@@ -1,0 +1,78 @@
+[2025-11-18 06:01:42] STATUS: DOWN (301) for https://gmail.com
+[2025-11-18 06:01:53] STATUS: DOWN (301) for https://fb.com
+[2025-11-18 06:15:10] STATUS: DOWN (301) for https://google.com
+[2025-11-18 06:15:53] STATUS: DOWN (000) for http://localhost:4499
+[2025-11-18 21:40:13] STATUS: DOWN (000) for http://localhost:4499
+[2025-11-18 21:40:14] STATUS: DOWN (000) for http://localhost:4499
+[2025-11-18 21:40:15] STATUS: DOWN (000) for http://localhost:4499
+[2025-11-18 21:40:16] STATUS: DOWN (000) for http://localhost:4499
+[2025-11-18 21:40:17] STATUS: DOWN (000) for http://localhost:4499
+[2025-11-18 21:40:18] STATUS: DOWN (000) for http://localhost:4499
+[2025-11-18 21:40:19] STATUS: DOWN (000) for http://localhost:4499
+[2025-11-18 21:40:20] STATUS: DOWN (000) for http://localhost:4499
+[2025-11-18 21:40:21] STATUS: DOWN (000) for http://localhost:4499
+[2025-11-18 21:40:30] STATUS: UP (200 OK) for https://fb.com
+[2025-11-18 21:40:32] STATUS: UP (200 OK) for https://fb.com
+[2025-11-18 21:40:34] STATUS: UP (200 OK) for https://fb.com
+[2025-11-18 21:40:36] STATUS: UP (200 OK) for https://fb.com
+[2025-11-18 21:40:38] STATUS: UP (200 OK) for https://fb.com
+[2025-11-18 21:42:00] STATUS: UP (200 OK) for https://gmail.com
+[2025-11-18 21:42:03] STATUS: UP (200 OK) for https://gmail.com
+[2025-11-18 21:42:07] STATUS: UP (200 OK) for https://gmail.com
+[2025-11-18 21:42:13] STATUS: DOWN (000) for https://gmail1233.com
+[2025-11-18 21:42:14] STATUS: DOWN (000) for https://gmail1233.com
+[2025-11-18 21:42:16] STATUS: DOWN (000) for https://gmail1233.com
+[2025-11-18 21:42:17] STATUS: DOWN (000) for https://gmail1233.com
+[2025-11-18 21:42:18] STATUS: DOWN (000) for https://gmail1233.com
+[2025-11-18 21:42:19] STATUS: DOWN (000) for https://gmail1233.com
+[2025-11-18 21:43:07] STATUS: UP (200 OK) for https://www.gmail.com
+[2025-11-18 21:43:10] STATUS: UP (200 OK) for https://www.gmail.com
+[2025-11-18 21:43:14] STATUS: UP (200 OK) for https://www.gmail.com
+[2025-11-18 21:50:40] STATUS: UP (200 OK) for gmail.com
+[2025-11-18 21:50:44] STATUS: UP (200 OK) for gmail.com
+[2025-11-18 21:50:47] STATUS: UP (200 OK) for gmail.com
+[2025-11-18 22:11:53] Redirect: gmail.com → https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&dsh=S-1608554035%3A1763484115214704&emr=1&followup=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&ifkv=ARESoU2ZlxOFWbDlHcW9484uKPaLf85x5l4YnYuvfUqGVXM_KQJMr5f0SnjaQM-u6C7-yuWdIV7p1w&osid=1&passive=1209600&service=mail&flowName=WebLiteSignIn&flowEntry=ServiceLogin
+[2025-11-18 22:11:53] UP (200 OK) - https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&dsh=S-1608554035%3A1763484115214704&emr=1&followup=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&ifkv=ARESoU2ZlxOFWbDlHcW9484uKPaLf85x5l4YnYuvfUqGVXM_KQJMr5f0SnjaQM-u6C7-yuWdIV7p1w&osid=1&passive=1209600&service=mail&flowName=WebLiteSignIn&flowEntry=ServiceLogin
+[2025-11-18 22:11:58] Redirect: gmail.com → https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&dsh=S-1289451906%3A1763484120402451&emr=1&followup=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&ifkv=ARESoU3ruflC-Nn0IIhH9y2i68_UIJe43fQ2yUMB-1H8w5RL8TnLisEjMDb8lYvvPBTFsIDqtORXMw&osid=1&passive=1209600&service=mail&flowName=WebLiteSignIn&flowEntry=ServiceLogin
+[2025-11-18 22:11:58] UP (200 OK) - https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&dsh=S-1289451906%3A1763484120402451&emr=1&followup=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&ifkv=ARESoU3ruflC-Nn0IIhH9y2i68_UIJe43fQ2yUMB-1H8w5RL8TnLisEjMDb8lYvvPBTFsIDqtORXMw&osid=1&passive=1209600&service=mail&flowName=WebLiteSignIn&flowEntry=ServiceLogin
+[2025-11-18 22:12:02] Redirect: gmail.com → https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&dsh=S-282082511%3A1763484124222463&emr=1&followup=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&ifkv=ARESoU2BUKiiixF1tnRLXXakfD3joBMQDaByILVXWfkDE2ZQHub2QtyPKPFJFv6GPYS4egdkFB4qIQ&osid=1&passive=1209600&service=mail&flowName=WebLiteSignIn&flowEntry=ServiceLogin
+[2025-11-18 22:12:02] UP (200 OK) - https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&dsh=S-282082511%3A1763484124222463&emr=1&followup=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F&ifkv=ARESoU2BUKiiixF1tnRLXXakfD3joBMQDaByILVXWfkDE2ZQHub2QtyPKPFJFv6GPYS4egdkFB4qIQ&osid=1&passive=1209600&service=mail&flowName=WebLiteSignIn&flowEntry=ServiceLogin
+[2025-11-18 22:12:32] Redirect: fb.com → https://www.facebook.com/
+[2025-11-18 22:12:32] UP (200 OK) - https://www.facebook.com/
+[2025-11-18 22:12:35] Redirect: fb.com → https://www.facebook.com/
+[2025-11-18 22:12:35] UP (200 OK) - https://www.facebook.com/
+[2025-11-18 22:12:36] Redirect: fb.com → https://www.facebook.com/
+[2025-11-18 22:12:36] UP (200 OK) - https://www.facebook.com/
+[2025-11-18 22:12:38] Redirect: fb.com → https://www.facebook.com/
+[2025-11-18 22:12:38] UP (200 OK) - https://www.facebook.com/
+[2025-11-18 22:12:40] Redirect: fb.com → https://www.facebook.com/
+[2025-11-18 22:12:40] UP (200 OK) - https://www.facebook.com/
+[2025-11-18 22:12:52] Redirect: 123.com → http://123.com/
+[2025-11-18 22:12:52] UP (200 OK) - http://123.com/
+[2025-11-18 22:12:59] Redirect: 123.com → http://123.com/
+[2025-11-18 22:12:59] UP (200 OK) - http://123.com/
+[2025-11-18 22:13:01] Redirect: 123.com → http://123.com/
+[2025-11-18 22:13:01] UP (200 OK) - http://123.com/
+[2025-11-18 22:13:32] Redirect: google.com → http://www.google.com/
+[2025-11-18 22:13:32] UP (200 OK) - http://www.google.com/
+[2025-11-18 22:13:33] Redirect: google.com → http://www.google.com/
+[2025-11-18 22:13:33] UP (200 OK) - http://www.google.com/
+[2025-11-18 22:13:35] Redirect: google.com → http://www.google.com/
+[2025-11-18 22:13:35] UP (200 OK) - http://www.google.com/
+[2025-11-18 22:13:36] Redirect: google.com → http://www.google.com/
+[2025-11-18 22:13:36] UP (200 OK) - http://www.google.com/
+[2025-11-18 22:13:38] Redirect: google.com → http://www.google.com/
+[2025-11-18 22:13:38] UP (200 OK) - http://www.google.com/
+[2025-11-18 22:13:39] Redirect: google.com → http://www.google.com/
+[2025-11-18 22:13:39] UP (200 OK) - http://www.google.com/
+[2025-11-18 22:13:41] Redirect: google.com → http://www.google.com/
+[2025-11-18 22:13:41] UP (200 OK) - http://www.google.com/
+[2025-11-18 22:21:13] STATUS: UP (301) for google.com
+[2025-11-18 22:21:26] STATUS: UP (301) for gmail.com
+[2025-11-18 22:26:39] STATUS: UP (301) for gmail.com
+[2025-11-18 22:26:47] STATUS: UP (301) for cloud.com
+[2025-11-18 22:36:58] STATUS: UP (301) for google.com
+[2025-11-18 23:40:21] STATUS: UP (301) for google.com
+[2025-11-18 23:42:18] STATUS: UP for google.com
+[2025-11-18 23:43:37] google.com STATUS: UP 
+[2025-11-18 23:43:56] googleasf.com STATUS: DOWN 
