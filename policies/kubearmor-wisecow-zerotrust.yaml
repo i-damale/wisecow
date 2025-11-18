@@ -1,0 +1,31 @@
+apiVersion: security.kubearmor.com/v1
+kind: KubeArmorPolicy
+metadata:
+  name: wisecow-block-pkg-mgmt-tools
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: wisecow        # match the "app:" label Deployment
+  process:
+    matchPaths:
+      - path: /usr/bin/apt
+      - path: /usr/bin/apt-get
+  action:
+    Block
+---
+apiVersion: security.kubearmor.com/v1
+kind: KubeArmorPolicy
+metadata:
+  name: wisecow-block-service-account-token
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: wisecow        #Same label 
+  file:
+    matchDirectories:
+      - dir: /run/secrets/kubernetes.io/serviceaccount/
+        recursive: true
+  action:
+    Block
