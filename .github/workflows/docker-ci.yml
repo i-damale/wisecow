@@ -1,36 +1,29 @@
 # =====================================================================
 # CI/CD Pipeline for Wisecow Application
-# Version: 2.0
 # Author: Somnath Damale
 #
-# Overview:
-# This workflow builds Docker image for Wisecow, pushes it to Docker Hub,
-# creates Kind Kubernetes cluster, deploys application along with
-# Service, TLS Secret, Ingress, and verifies HTTPS access.
+# Version History:
 #
-# Background and Fix:
-# The previous workflow used kind" provider manifest for NGINX Ingress
-# (controller-v1.7.1). On GitHub Actions runners, this version frequently
-# fails with:
+# v1.0
+# - Initial pipeline: Build image → Push → Deploy on Kind.
+# - Used ingress-nginx controller (provider/kind, v1.7.1).
+# - Failed on GitHub Actions due to admission webhook timeouts.
 #
-#   "error: timed out waiting for the condition on pods/ingress-nginx-controller"
+# v2.0
+# - Replaced ingress manifest with lightweight provider/cloud (v1.9.4).
+# - Improved reliability on GitHub Runners.
+# - Added longer wait timers.
+# - Pipeline reached HTTPS test stage, but failed due to missing
+#   host → container port forwarding (443/80) inside Kind.
 #
-# Reason:
-# GitHub-hosted runners have limited CPU/memory and ingress manifests for KIND
-# deploy multiple components such as admission webhooks, patch jobs, and 
-# validating webhooks. These require more resources and longer startup times.
-# As a result, the ingress controller never reached a Ready state before the
-# 90s timeout, causing the Deploy job to fail.
+# v3.0 (Current)
+# - Added Kind cluster config with extraPortMappings for ports 80 & 443.
+# - Ensures GitHub Actions runner can access ingress controller on HTTPS.
+# - HTTPS test now fully functional.
 #
-# Solution Implemented:
-# For stability, the ingress deployment is switched to the lightweight 
-# "provider/cloud" variant (controller-v1.9.4). It avoids heavy admission 
-# webhooks and patch jobs, resulting in faster startup and reliable readiness
-# inside GitHub Actions.
-#
-# A longer wait timeout (180s) and an additional fallback wait sequence have 
-# been added to ensure consistent behavior on all runners.
-#
+# Purpose:
+# Build Docker image, push to Docker Hub, deploy Wisecow to a Kind
+# cluster with TLS + Ingress, and verify HTTPS access end-to-end.
 # =====================================================================
 
 name: CI/CD Pipeline (Build + Deploy)
@@ -72,14 +65,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Create Kind Cluster
+      # -----------------------------------------------------------------
+      # v3: Kind cluster with explicit port forwarding for ingress HTTPS
+      # -----------------------------------------------------------------
+      - name: Create Kind Cluster with Port Mappings
         uses: helm/kind-action@v1.7.0
         with:
           version: v0.20.0
           node_image: kindest/node:v1.27.0
+          config: |
+            kind: Cluster
+            apiVersion: kind.x-k8s.io/v1alpha4
+            nodes:
+              - role: control-plane
+                extraPortMappings:
+                  - containerPort: 80
+                    hostPort: 80
+                  - containerPort: 443
+                    hostPort: 443
 
       # -----------------------------------------------------------------
-      # Lightweight ingress controller – stable for GitHub Actions
+      # Lightweight ingress-nginx (stable on GitHub Actions)
       # -----------------------------------------------------------------
       - name: Install NGINX Ingress Controller
         run: |
@@ -96,7 +102,7 @@ jobs:
             (echo "Retrying wait..."; sleep 20; kubectl get pods -n ingress-nginx)
 
       # -----------------------------------------------------------------
-      # Deploy Wisecow application
+      # Deployment + Service
       # -----------------------------------------------------------------
       - name: Apply Deployment
         run: kubectl apply -f deployment.yaml
@@ -105,7 +111,7 @@ jobs:
         run: kubectl apply -f service.yaml
 
       # -----------------------------------------------------------------
-      # TLS Setup
+      # TLS Certificate + Secret
       # -----------------------------------------------------------------
       - name: Generate TLS Certificate
         run: |
@@ -122,14 +128,15 @@ jobs:
       - name: Apply Ingress
         run: kubectl apply -f ingress.yaml
 
-      # -----------------------------------------------------------------
-      # Final rollout checks
-      # -----------------------------------------------------------------
       - name: Wait for Deployment Rollout
         run: kubectl rollout status deployment/wisecow-deployment --timeout=60s
 
+      # Add local hosts entry (needed for curl to resolve wisecow.local)
       - name: Add hosts entry
         run: echo "127.0.0.1 wisecow.local" | sudo tee -a /etc/hosts
 
+      # -----------------------------------------------------------------
+      # Final Step: HTTPS Verification
+      # -----------------------------------------------------------------
       - name: Test HTTPS
         run: curl -vk https://wisecow.local
