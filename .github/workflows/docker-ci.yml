@@ -1,175 +1,153 @@
-# ======================================================================================================
-#  CI/CD PIPELINE for WISECOW 
+# -----------------------------------------------------------------------------
+# Wisecow CI/CD Pipeline - v5 (K3s via k3d)
+# Author   : Somnath Damale (i-damale)
+# Purpose  : Build & push Docker image, then deploy to a temporary K3s cluster
+#            inside GitHub Actions with TLS + HTTPS check.
 #
-#  Author:Somnath Damale (i-damale)
-#  Repository: https://github.com/i-damale/wisecow
-#
-#  PURPOSE:
-#    - Build Wisecow Docker image
-#    - Push image to Docker Hub (container registry)
-#    - Provision Kubernetes cluster using Kind
-#    - Install NGINX Ingress Controller
-#    - Deploy Wisecow app + Kubernetes Service
-#    - Generate TLS certificate + Kubernetes TLS Secret
-#    - Apply HTTPS Ingress routing
-#    - Perform automated HTTPS Validation
-#
-#  VERSION HISTORY:
-#  ------------------------------------------------------------------------------------------------------
-#    v1  → Initial Docker build + push pipeline
-#    v2  → Added Kubernetes deploy stage, TLS setup, and Ingress configuration
-#    v3  → Introduced lightweight Ingress controller and attempted inline Kind config (FAILED)
-#    v4  → FINAL STABLE VERSION
-#           ✓ Moved Kind config to external file: kind-config.yaml
-#           ✓ Added hostPort mappings for 80/443 for reliable HTTPS tests
-#           ✓ Upgraded Ingress Controller to v1.9.4
-#           ✓ Extended readiness timeout for reliability
-#           ✓ Cleaned and reorganized all steps with clearer separation
-# ======================================================================================================
+# History:
+#   v1 - Simple Docker build + push to Docker Hub.
+#   v2 - Added KinD cluster + nginx ingress, basic HTTPS.
+#   v3 - Tweaked ingress + timeouts, but KinD ingress stayed flaky.
+#   v4 - Added explicit KinD config + host port mappings, still hit
+#        intermittent ingress controller "timeout waiting for condition".
+#   v5 - Previous build with MiniKube and KinD did not work hence Switched to K3s (via k3d) for a lighter, more stable cluster with
+#        Traefik ingress built-in. Removed manual nginx ingress install.
+# -----------------------------------------------------------------------------
 
-
-name: CI/CD Pipeline (Build + Deploy)
+name: CI/CD Pipeline (Build + Deploy, K3s v5)
 
 on:
   push:
     branches:
       - main
 
+env:
+  # Re-use the same image name everywhere
+  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/wisecow
+
 jobs:
-
-
-  # ====================================================================================================
-  # 1) BUILD + PUSH DOCKER IMAGE
-  # ====================================================================================================
+  # ---------------------------------------------------------------------------
+  # JOB 1: Build image and push to Docker Hub
+  # ---------------------------------------------------------------------------
   build:
-    name: Build & Push Docker Image
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
 
     steps:
-
-      # -------------------------------------------
-      # Step 1: Checkout Wisecow source code
-      # -------------------------------------------
-      - name: Checkout Code
+      # [v1] Get code from the repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # -------------------------------------------
-      # Step 2: Authenticate to Docker Hub
-      # -------------------------------------------
+      # [v1] Log in to Docker Hub using repo secrets
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # -------------------------------------------
-      # Step 3: Build Docker Image from Dockerfile
-      # -------------------------------------------
-      - name: Build Docker Image
+      # [v5] Build image with two tags:
+      #   - latest  -> for general use
+      #   - v1      -> matches the image tag used in deployment.yaml
+      - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/wisecow:latest .
+          docker build \
+            -t $DOCKER_IMAGE:latest \
+            -t $DOCKER_IMAGE:v1 \
+            .
 
-      # -------------------------------------------
-      # Step 4: Push Docker Image to Docker Hub
-      # -------------------------------------------
-      - name: Push Docker Image
+      # [v1] Push both tags so K8s always pulls a fresh version
+      - name: Push Docker image (latest + v1)
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/wisecow:latest
+          docker push $DOCKER_IMAGE:latest
+          docker push $DOCKER_IMAGE:v1
 
-
-
-  # ====================================================================================================
-  # 2) DEPLOY TO KIND (K8s) + TLS + INGRESS + HTTPS TEST
-  # ====================================================================================================
+  # ---------------------------------------------------------------------------
+  # JOB 2: Deploy to ephemeral K3s cluster (via k3d) + HTTPS test
+  # ---------------------------------------------------------------------------
   deploy:
-    name: Deploy to Kind Cluster (HTTPS)
+    name: Deploy to K3s (k3d) + TLS check
     runs-on: ubuntu-latest
-    needs: build   # Ensure Build job finishes first
+    needs: build
 
     steps:
-
-      # -------------------------------------------
-      # Step 1: Checkout Deployment Manifests
-      # -------------------------------------------
-      - name: Checkout Code
+      # Always check out the same repo to read YAML manifests
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-
-      # =====================================================================
-      # v4 FIX: Use external Kind config file for stable cluster creation
-      # =====================================================================
-      - name: Create Kind Cluster (with 80/443 mappings)
-        uses: helm/kind-action@v1.7.0
+      # [v5] Start a lightweight K3s cluster using k3d
+      #   - Traefik ingress is included by default in K3s.
+      #   - We expose load balancer ports 80 and 443 to the runner.
+      - name: Setup K3s cluster with k3d
+        uses: nolar/setup-k3d-k3s@v1
         with:
-          version: v0.20.0
-          node_image: kindest/node:v1.27.0
-          config: kind-config.yaml  # v4 Fix: external file
-          cluster_name: wisecow-cluster
-          wait: 90s
+          # Kubernetes / K3s version; can be bumped later if needed
+          version: v1.27
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Map host:443 -> cluster load balancer:443 (for HTTPS)
+          # and host:80  -> cluster load balancer:80  (for HTTP if needed)
+          k3d-args: >-
+            --port "80:80@loadbalancer"
+            --port "443:443@loadbalancer"
 
-
-      # =====================================================================
-      # NGINX Ingress Controller (Stable v1.9.4)
-      # =====================================================================
-      - name: Install NGINX Ingress Controller
+      # Quick sanity check – not required, but useful for debugging
+      - name: Show cluster info
         run: |
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/kind/deploy.yaml
-          kubectl wait --namespace ingress-nginx \
-            --for=condition=Ready pod \
-            --selector=app.kubernetes.io/component=controller \
-            --timeout=120s
+          kubectl cluster-info
+          kubectl get nodes
+          kubectl get pods -A
 
-
-      # =====================================================================
-      # Apply Wisecow Deployment + Service
-      # =====================================================================
-      - name: Apply Deployment
+      # Apply Deployment (uses image $DOCKER_IMAGE:v1 from Docker Hub)
+      - name: Apply Deployment manifest
         run: kubectl apply -f deployment.yaml
 
-      - name: Apply Service
+      # Apply Service (NodePort, but also used behind Ingress)
+      - name: Apply Service manifest
         run: kubectl apply -f service.yaml
 
-
-      # =====================================================================
-      # TLS Certificate + Kubernetes Secret
-      # =====================================================================
-      - name: Generate TLS Certificate
+      # [v5] Generate a self-signed TLS cert for host "wisecow.local"
+      - name: Generate self-signed TLS certificate
         run: |
           openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-            -keyout tls.key -out tls.crt \
+            -keyout tls.key \
+            -out tls.crt \
             -subj "/CN=wisecow.local/O=Wisecow"
 
-      - name: Create TLS Secret
+      # [v5] Create (or update) the kubernetes TLS secret "wisecow-tls"
+      #      used in ingress.yaml under spec.tls.secretName.
+      - name: Create/Update TLS Secret in cluster
         run: |
           kubectl create secret tls wisecow-tls \
             --cert=tls.crt \
-            --key=tls.key
+            --key=tls.key \
+            --dry-run=client -o yaml | kubectl apply -f -
 
-
-      # =====================================================================
-      # Apply HTTPS Ingress Routing
-      # =====================================================================
-      - name: Apply Ingress
+      # Apply Ingress. On K3s, Traefik will pick this Ingress up by default.
+      - name: Apply Ingress manifest
         run: kubectl apply -f ingress.yaml
 
+      # Wait for the wisecow deployment to roll out successfully
+      - name: Wait for wisecow rollout
+        run: kubectl rollout status deployment/wisecow-deployment --timeout=90s
 
-      # =====================================================================
-      # Rollout Check — Ensure Pod is Running
-      # =====================================================================
-      - name: Wait for Deployment
-        run: kubectl rollout status deployment/wisecow-deployment --timeout=60s
+      # Add hosts entry so "wisecow.local" resolves to 127.0.0.1 inside the runner
+      - name: Add hosts entry for wisecow.local
+        run: echo "127.0.0.1 wisecow.local" | sudo tee -a /etc/hosts
 
-
-      # =====================================================================
-      # Add host entry for HTTPS testing
-      # =====================================================================
-      - name: Add Host Entry (wisecow.local → localhost)
+      # [v5] HTTPS smoke test:
+      #   - curl -k   : skip TLS verification because we are using self-signed cert
+      #   - simple retry loop to wait for Traefik + Ingress to be fully ready
+      - name: Test HTTPS endpoint via Ingress
         run: |
-          echo "127.0.0.1 wisecow.local" | sudo tee -a /etc/hosts
-
-
-      # =====================================================================
-      # FINAL CHECK → HTTPS TEST
-      # =====================================================================
-      - name: Test HTTPS Endpoint
-        run: curl -vk https://wisecow.local
+          echo "Waiting for HTTPS endpoint at https://wisecow.local ..."
+          for i in {1..10}; do
+            echo "Attempt $i ..."
+            if curl -k --max-time 5 https://wisecow.local >/dev/null 2>&1; then
+              echo "HTTPS check succeeded on attempt $i"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "HTTPS endpoint did not become ready in time"
+          kubectl get pods -A
+          kubectl get ingress
+          exit 1
