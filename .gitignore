@@ -1,11 +1,108 @@
-minikube-linux-amd64
-minikube-linux-amd64
-minikube-linux-amd64
-tls.crt
-tls.key
-tls.crt
-tls.key
-minikube-linux-amd64
-tls.key
-tls.crt
+# ============================================================
+# Global Ignore File for Wisecow Repository
+# Author: Somnath Damale
+# Purpose: Exclude binaries, logs, secrets, cache, and
+#          auto-generated files from version control.
+# ============================================================
+
+# -------------------------------
+# OS-specific files
+# -------------------------------
+.DS_Store
+Thumbs.db
+
+# -------------------------------
+# Logs & Runtime Files
+# -------------------------------
+*.log
+*.out
+*.err
+*.pid
+*.tmp
+*.swp
+*.swo
+nohup.out
+
+# PS2 script logs
+PS2/*.log
+
+# FIFO pipes
 response
+
+# -------------------------------
+# Bash script artifacts
+# -------------------------------
+a.out
+*.o
+*.bin
+*.exe
+
+# -------------------------------
+# Minikube / Kubernetes artifacts
+# -------------------------------
+minikube*
+*.crt
+*.key
+tls.key
+tls.crt
+
+# kubeconfig backups
+*.kubeconfig
+*.conf
+
+# Local Kubernetes cache
+.kube/
+.kind/
+
+# -------------------------------
+# Python cache (future scripts)
+# -------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# -------------------------------
+# Node / NPM (if ever used)
+# -------------------------------
+node_modules/
+npm-debug.log
+
+# -------------------------------
+# VSCode and JetBrains IDEs
+# -------------------------------
+.vscode/
+.idea/
+*.iml
+
+# -------------------------------
+# GitHub Actions temporary files
+# -------------------------------
+.github/workflows/*.bak
+.github/workflows/*.tmp
+
+# -------------------------------
+# Build artifacts (general)
+# -------------------------------
+dist/
+build/
+target/
+out/
+
+# -------------------------------
+# Backup & temp files
+# -------------------------------
+*~
+*.bak
+*.backup
+
+# -------------------------------
+# TLS / Secrets (ensure NEVER committed)
+# -------------------------------
+secret*
+*.pem
+*.p12
+*.jks
+# ============================================================
+# End of file
+# ============================================================
