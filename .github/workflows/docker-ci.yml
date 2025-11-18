@@ -22,7 +22,6 @@ on:
       - main
 
 env:
-  # Re-use the same image name everywhere
   DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/wisecow
 
 jobs:
@@ -34,20 +33,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # [v1] Get code from the repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # [v1] Log in to Docker Hub using repo secrets
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # [v5] Build image with two tags:
-      #   - latest  -> for general use
-      #   - v1      -> matches the image tag used in deployment.yaml
       - name: Build Docker image
         run: |
           docker build \
@@ -55,7 +49,6 @@ jobs:
             -t $DOCKER_IMAGE:v1 \
             .
 
-      # [v1] Push both tags so K8s always pulls a fresh version
       - name: Push Docker image (latest + v1)
         run: |
           docker push $DOCKER_IMAGE:latest
@@ -70,13 +63,10 @@ jobs:
     needs: build
 
     steps:
-      # Always check out the same repo to read YAML manifests
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # [v5] Start a lightweight K3s cluster using k3d
-      #   - Traefik ingress is included by default in K3s.
-      #   - We expose load balancer ports 80 and 443 to the runner.
+      # Corrected port mapping block (NO quotes)
       - name: Create K3d Cluster
         uses: nolar/setup-k3d-k3s@v1
         with:
@@ -84,27 +74,21 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           k3d-tag: latest
           k3d-args: >
-            --port "80:80@loadbalancer"
-            --port "443:443@loadbalancer"
+            --port 80:80@loadbalancer
+            --port 443:443@loadbalancer
 
-          # and host:80  -> cluster load balancer:80  (for HTTP if needed)
-
-      # Quick sanity check – not required, but useful for debugging
       - name: Show cluster info
         run: |
           kubectl cluster-info
           kubectl get nodes
           kubectl get pods -A
 
-      # Apply Deployment (uses image $DOCKER_IMAGE:v1 from Docker Hub)
       - name: Apply Deployment manifest
         run: kubectl apply -f deployment.yaml
 
-      # Apply Service (NodePort, but also used behind Ingress)
       - name: Apply Service manifest
         run: kubectl apply -f service.yaml
 
-      # [v5] Generate a self-signed TLS cert for host "wisecow.local"
       - name: Generate self-signed TLS certificate
         run: |
           openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -112,8 +96,6 @@ jobs:
             -out tls.crt \
             -subj "/CN=wisecow.local/O=Wisecow"
 
-      # [v5] Create (or update) the kubernetes TLS secret "wisecow-tls"
-      #      used in ingress.yaml under spec.tls.secretName.
       - name: Create/Update TLS Secret in cluster
         run: |
           kubectl create secret tls wisecow-tls \
@@ -121,21 +103,15 @@ jobs:
             --key=tls.key \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      # Apply Ingress. On K3s, Traefik will pick this Ingress up by default.
       - name: Apply Ingress manifest
         run: kubectl apply -f ingress.yaml
 
-      # Wait for the wisecow deployment to roll out successfully
       - name: Wait for wisecow rollout
         run: kubectl rollout status deployment/wisecow-deployment --timeout=90s
 
-      # Add hosts entry so "wisecow.local" resolves to 127.0.0.1 inside the runner
       - name: Add hosts entry for wisecow.local
         run: echo "127.0.0.1 wisecow.local" | sudo tee -a /etc/hosts
 
-      # [v5] HTTPS smoke test:
-      #   - curl -k   : skip TLS verification because we are using self-signed cert
-      #   - simple retry loop to wait for Traefik + Ingress to be fully ready
       - name: Test HTTPS endpoint via Ingress
         run: |
           echo "Waiting for HTTPS endpoint at https://wisecow.local ..."
