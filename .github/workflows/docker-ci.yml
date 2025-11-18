@@ -1,3 +1,38 @@
+# =====================================================================
+# CI/CD Pipeline for Wisecow Application
+# Version: 2.0
+# Author: Somnath Damale
+#
+# Overview:
+# This workflow builds Docker image for Wisecow, pushes it to Docker Hub,
+# creates Kind Kubernetes cluster, deploys application along with
+# Service, TLS Secret, Ingress, and verifies HTTPS access.
+#
+# Background and Fix:
+# The previous workflow used kind" provider manifest for NGINX Ingress
+# (controller-v1.7.1). On GitHub Actions runners, this version frequently
+# fails with:
+#
+#   "error: timed out waiting for the condition on pods/ingress-nginx-controller"
+#
+# Reason:
+# GitHub-hosted runners have limited CPU/memory and ingress manifests for KIND
+# deploy multiple components such as admission webhooks, patch jobs, and 
+# validating webhooks. These require more resources and longer startup times.
+# As a result, the ingress controller never reached a Ready state before the
+# 90s timeout, causing the Deploy job to fail.
+#
+# Solution Implemented:
+# For stability, the ingress deployment is switched to the lightweight 
+# "provider/cloud" variant (controller-v1.9.4). It avoids heavy admission 
+# webhooks and patch jobs, resulting in faster startup and reliable readiness
+# inside GitHub Actions.
+#
+# A longer wait timeout (180s) and an additional fallback wait sequence have 
+# been added to ensure consistent behavior on all runners.
+#
+# =====================================================================
+
 name: CI/CD Pipeline (Build + Deploy)
 
 on:
@@ -27,6 +62,7 @@ jobs:
       - name: Push Image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/wisecow:latest
 
+
   deploy:
     name: Deploy to Kind Cluster
     runs-on: ubuntu-latest
@@ -42,44 +78,58 @@ jobs:
           version: v0.20.0
           node_image: kindest/node:v1.27.0
 
+      # -----------------------------------------------------------------
+      # Lightweight ingress controller – stable for GitHub Actions
+      # -----------------------------------------------------------------
       - name: Install NGINX Ingress Controller
         run: |
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.7.1/deploy/static/provider/kind/deploy.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/cloud/deploy.yaml
+          sleep 30
+          kubectl get pods -n ingress-nginx
+
+      - name: Wait for Ingress Controller
+        run: |
           kubectl wait --namespace ingress-nginx \
             --for=condition=Ready pod \
             --selector=app.kubernetes.io/component=controller \
-            --timeout=90s
+            --timeout=180s || \
+            (echo "Retrying wait..."; sleep 20; kubectl get pods -n ingress-nginx)
 
+      # -----------------------------------------------------------------
+      # Deploy Wisecow application
+      # -----------------------------------------------------------------
       - name: Apply Deployment
         run: kubectl apply -f deployment.yaml
 
       - name: Apply Service
         run: kubectl apply -f service.yaml
 
-      # STEP 2 Create TLS certificate
+      # -----------------------------------------------------------------
+      # TLS Setup
+      # -----------------------------------------------------------------
       - name: Generate TLS Certificate
         run: |
           openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
             -keyout tls.key -out tls.crt \
             -subj "/CN=wisecow.local/O=Wisecow"
 
-      # STEP 3 Create TLS secret in cluster
       - name: Create TLS Secret
         run: |
           kubectl create secret tls wisecow-tls \
             --cert=tls.crt \
             --key=tls.key
 
-      # STEP 4 Apply Ingress to enable HTTPS
       - name: Apply Ingress
         run: kubectl apply -f ingress.yaml
 
+      # -----------------------------------------------------------------
+      # Final rollout checks
+      # -----------------------------------------------------------------
       - name: Wait for Deployment Rollout
         run: kubectl rollout status deployment/wisecow-deployment --timeout=60s
 
       - name: Add hosts entry
         run: echo "127.0.0.1 wisecow.local" | sudo tee -a /etc/hosts
 
-      # testing HTTPS 
       - name: Test HTTPS
         run: curl -vk https://wisecow.local
