@@ -24,7 +24,7 @@
 # Purpose:
 # Build Docker image, push to Docker Hub, deploy Wisecow to a Kind
 # cluster with TLS + Ingress, and verify HTTPS access end-to-end.
-# =====================================================================
+# ====================================================================
 
 name: CI/CD Pipeline (Build + Deploy)
 
