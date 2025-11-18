@@ -87,8 +87,6 @@ jobs:
             --port "80:80@loadbalancer"
             --port "443:443@loadbalancer"          # Map host:443 -> cluster load balancer:443 (for HTTPS)
           # and host:80  -> cluster load balancer:80  (for HTTP if needed)
-          k3d-args: >-
-            --port "80:80@loadbalancer"
 
       # Quick sanity check – not required, but useful for debugging
       - name: Show cluster info
