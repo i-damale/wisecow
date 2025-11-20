@@ -108,6 +108,7 @@ A minimal Zero Trust policy is included (optional) in `/policies/`.
 ## 📣 Author
 **Somnath Damale (i-damale)**  
 Freelancer | DevOps Enthusiast | Cloud & Automation
+
 https://github.com/i-damale
 ---
 
